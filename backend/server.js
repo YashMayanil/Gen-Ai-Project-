@@ -3,6 +3,7 @@ const app = require("./src/app.js");
 const connectToDB = require("./config/database.js")
 
 
+
 connectToDB();
 
 app.listen(3000,()=>{

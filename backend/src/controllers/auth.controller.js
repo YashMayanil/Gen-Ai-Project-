@@ -1,7 +1,7 @@
 const userModel = require("../models/user.model.js")
 const bcrypt = require("bcryptjs")
-const jwt = require("jsonwebtoken")
-
+const jwt = require("jsonwebtoken");
+const tokenBlackListModel = require("../models/blacklist.model.js");
 
 
 /**
@@ -38,19 +38,19 @@ async function registeruserController(req,res){
     })
 
     const token = jwt.sign(
-        {id:userModel._id,username:user.username},
+        {id:newUser._id,username:newUser.username},
         process.env.JWT_SECRET_KEY,
         {expiresIn:"1d"}
     )
 
-    res.cookie("token",token);
+    res.cookie("token",token);  // it directly logs in when use gets registerd 
 
     res.status(201).json({
         message:"User registered successfully",
         user:{
-            id:user._id,
-            username:user.username,
-            email:user.email
+            id:newUser._id,
+            username:newUser.username,
+            email:newUser.email
         }
     })
 }
@@ -61,8 +61,7 @@ async function registeruserController(req,res){
  * @access Public 
  */
 
-
-async function loginUserController (){
+async function loginUserController (req,res){
     
     const {email , password} = req.body;
 
@@ -83,7 +82,7 @@ async function loginUserController (){
 
     const token = jwt.sign(
         {id:user._id,username:user.username},
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET_KEY,
         {expiresIn:"1d"}
     )
 
@@ -91,11 +90,65 @@ async function loginUserController (){
     res.status(200).json({
         message:"User looged in successfully",
         user:{
-            id:newUser._id,
+            id:user._id,
             username:user.username,
             email:user.email,
         }
     })
 }
 
-module.exports = {registeruserController,loginUserController}
+/**
+ * @name logoutUserController 
+ * @description clear token from user cookie and add the token in blacklist
+ * @acess public 
+ */
+
+async function logoutUserController (req,res){
+    try {
+        const token = req.cookies.token;
+
+        if (!token) {
+            return res.status(400).json({
+                message: "No token found"
+            });
+        }
+
+        // Add token to blacklist
+        await tokenBlackListModel.create({ token });
+
+        // Clear cookie
+        res.clearCookie("token");
+
+        res.status(200).json({
+            message: "User logged out successfully"
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Logout failed",
+            error: error.message
+        });
+    }
+}
+
+
+/**
+ * @name getMeController 
+ * @description get the current logged in user details
+ * @access public
+ */
+
+async function getMeController(req,res){
+    
+    const user = await userModel.findById(req.user.id);
+    
+    res.status(200).json({
+        user:{
+            id:user._id,
+            username:user.username,
+            email:user.email
+        }
+    })
+}
+
+module.exports = {registeruserController,loginUserController,logoutUserController,getMeController}
