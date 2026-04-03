@@ -14,7 +14,8 @@ export const AuthProvider = ({children})=>{
          setLoading(false);
       }
 
-      getandSetUser()
+      getandSetUser();
+
     },[])
     
     return (
