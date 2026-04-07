@@ -9,11 +9,11 @@ const Register = () => {
      const [username,setUsername] = useState("")
      const [email,setEmail] = useState("")
      const [password,setPassword] = useState("")
-     const {loading , handleResiter} = useAuth();
+     const {loading , handleRegister} = useAuth();
 
      const handleSubmit = async (e)=>{
         e.preventDefault();
-        await handleResiter({username,email,password})
+        await handleRegister({username,email,password})
         navigate("/")
       }
 

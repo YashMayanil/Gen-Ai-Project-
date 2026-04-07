@@ -6,18 +6,18 @@ const api = axios.create({
     withCredentials:true
 })
 
-export async function register({username,email,passowrd}) {
+export async function register({username,email,password}) {
     try{
         //so without writing this all code 
         // const response = await axios.post('/http://localhost:3000/api/auth/register',{
-        //     username,email,passowrd
+        //     username,email,password
         // },{
         //     withCredentials:true, //acess to the server to interact with cookies
         // })
 
         // we can write only now 
         const response = await api.post('/api/auth/register',{
-            username,email,passowrd
+            username,email,password
         })
 
         return response.data;
@@ -53,7 +53,7 @@ export async function getme(){
     try {
         
         const response = await api.get("/api/auth/get-me")
-
+        return response.data;
     } catch (error) {
         console.log(error)
     }

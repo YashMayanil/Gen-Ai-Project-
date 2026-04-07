@@ -10,8 +10,16 @@ export const AuthProvider = ({children})=>{
 
     useEffect(()=>{
       const getandSetUser = async ()=>{
-         const data = await getme();
-         setLoading(false);
+         try {
+            const data = await getme();
+            if (data?.user) {
+               setUser(data.user);
+            }
+         } catch (error) {
+            // ignore unauthenticated requests during initial load
+         } finally {
+            setLoading(false);
+         }
       }
 
       getandSetUser();

@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const { emit } = require("../app");
 
 
 const userSchema = new mongoose.Schema({

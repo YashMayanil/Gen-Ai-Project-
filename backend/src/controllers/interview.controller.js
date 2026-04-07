@@ -8,30 +8,72 @@ const interviewReportModel = require("../models/interviewReport.model")
 /**
  * @description Controller to generate interview report based on user self description, resume and job description.
  */
-async function generateInterViewReportController(req, res) {
+async function generateInterViewReportController(req, res, next) {
 
-    const resumeContent = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
-    const { selfDescription, jobDescription } = req.body
+    try {
+        let resumeText = ""
+        if (req.file && req.file.buffer) {
+            const parsed = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
+            resumeText = parsed.text
+        }
 
-    const interViewReportByAi = await generateInterviewReport({
-        resume: resumeContent.text,
-        selfDescription,
-        jobDescription
-    })
+        const { selfDescription, jobDescription } = req.body
 
-    const interviewReport = await interviewReportModel.create({
-        user: req.user.id,
-        resume: resumeContent.text,
-        selfDescription,
-        jobDescription,
-        ...interViewReportByAi
-    })
+        if (!jobDescription) {
+            return res.status(400).json({
+                message: "Job description is required"
+            })
+        }
 
-    res.status(201).json({
-        message: "Interview report generated successfully.",
-        interviewReport
-    })
+        if (!resumeText && !selfDescription) {
+            return res.status(400).json({
+                message: "Resume or self description is required"
+            })
+        }
 
+        const interViewReportByAi = await generateInterviewReport({
+            resume: resumeText,
+            selfDescription,
+            jobDescription
+        })
+
+        const titleFromAi = interViewReportByAi?.title?.trim();
+        const title = titleFromAi || jobDescription?.split("\n")[0]?.trim() || "Interview Report"
+        const {
+            matchScore = 0,
+            technicalQuestions = [],
+            behavioralQuestions = [],
+            skillGaps = [],
+            preparationPlan = []
+        } = interViewReportByAi || {}
+
+        const interviewReport = await interviewReportModel.create({
+            user: req.user.id,
+            resume: resumeText,
+            selfDescription,
+            jobDescription,
+            title,
+            matchScore,
+            technicalQuestions,
+            behavioralQuestions,
+            skillGaps,
+            preparationPlan
+        })
+
+        res.status(201).json({
+            message: "Interview report generated successfully.",
+            interviewReport
+        })
+    } catch (error) {
+        console.error("Interview generation error:", error)
+        if (error.name === "ValidationError") {
+            return res.status(400).json({
+                message: "Interview report validation failed.",
+                errors: error.errors
+            })
+        }
+        next(error)
+    }
 }
 
 /**

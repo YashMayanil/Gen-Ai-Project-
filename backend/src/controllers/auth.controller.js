@@ -43,7 +43,12 @@ async function registeruserController(req,res){
         {expiresIn:"1d"}
     )
 
-    res.cookie("token",token);  // it directly logs in when use gets registerd 
+    res.cookie("token", token, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: false,
+        maxAge: 24 * 60 * 60 * 1000,
+    })
 
     res.status(201).json({
         message:"User registered successfully",
@@ -75,7 +80,7 @@ async function loginUserController (req,res){
 
     const isPasswordValid = await bcrypt.compare(password,user.password);
     if(!isPasswordValid){
-        return res.status(400),json({
+        return res.status(400).json({
             message:"Invalid email or password"
         })
     }
@@ -86,7 +91,12 @@ async function loginUserController (req,res){
         {expiresIn:"1d"}
     )
 
-    res.cookie("token",token)
+    res.cookie("token", token, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: false,
+        maxAge: 24 * 60 * 60 * 1000,
+    })
     res.status(200).json({
         message:"User looged in successfully",
         user:{
@@ -117,7 +127,11 @@ async function logoutUserController (req,res){
         await tokenBlackListModel.create({ token });
 
         // Clear cookie
-        res.clearCookie("token");
+        res.clearCookie("token", {
+            httpOnly: true,
+            sameSite: "none",
+            secure: false,
+        });
 
         res.status(200).json({
             message: "User logged out successfully"

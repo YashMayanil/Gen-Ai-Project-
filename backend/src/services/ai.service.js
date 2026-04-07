@@ -50,7 +50,13 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
         }
     })
 
-    return JSON.parse(response.text)
+    const rawText = response?.text || response?.output?.[0]?.content?.[0]?.text || response?.result || null
+    if (!rawText) {
+        console.error("AI response missing text field:", response)
+        throw new Error("AI response did not include JSON text")
+    }
+
+    return JSON.parse(rawText)
 
 
 }
