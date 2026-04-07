@@ -56,7 +56,13 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
         throw new Error("AI response did not include JSON text")
     }
 
-    return JSON.parse(rawText)
+    try {
+        return JSON.parse(rawText)
+    } catch (parseError) {
+        console.error("Failed to parse AI JSON response:", parseError)
+        console.error("Raw AI response text:", rawText)
+        throw parseError
+    }
 
 
 }

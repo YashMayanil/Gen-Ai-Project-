@@ -1,4 +1,5 @@
 const pdfParse = require("pdf-parse")
+const mammoth = require("mammoth")
 const { generateInterviewReport, generateResumePdf } = require("../services/ai.service")
 const interviewReportModel = require("../models/interviewReport.model")
 
@@ -13,11 +14,29 @@ async function generateInterViewReportController(req, res, next) {
     try {
         let resumeText = ""
         if (req.file && req.file.buffer) {
-            const parsed = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
-            resumeText = parsed.text
+            console.log("Resume received:", req.file.originalname, req.file.mimetype, req.file.size)
+            try {
+                if (req.file.mimetype === "application/pdf") {
+                    const parsed = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
+                    resumeText = parsed.text
+                } else if (req.file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+                    const parsed = await mammoth.extractRawText({ buffer: req.file.buffer })
+                    resumeText = parsed.value
+                } else {
+                    return res.status(400).json({
+                        message: "Only PDF or DOCX resume files are supported"
+                    })
+                }
+            } catch (parseError) {
+                console.error("Resume parse failed:", parseError)
+                return res.status(400).json({
+                    message: "Unable to parse resume file. Please upload a valid PDF or DOCX file."
+                })
+            }
         }
 
         const { selfDescription, jobDescription } = req.body
+        console.log("Interview request body:", { selfDescription, jobDescription })
 
         if (!jobDescription) {
             return res.status(400).json({
